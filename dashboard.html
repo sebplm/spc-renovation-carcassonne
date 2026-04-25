@@ -172,16 +172,70 @@
     .loading i { animation: spin 1s linear infinite; display: inline-block; margin-right: .5rem; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* RESPONSIVE */
+    /* RESPONSIVE TABLET */
     @media (max-width: 900px) {
       .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-      .dash-header { padding: 1rem; }
+      .dash-header { padding: .75rem 1rem; }
       .dash-main { padding: 1rem; }
-      th:nth-child(5), td:nth-child(5) { display: none; }
+      .dash-logo span:last-child { display: none; }
     }
-    @media (max-width: 540px) {
-      .kpi-grid { grid-template-columns: 1fr 1fr; gap: .75rem; }
-      th:nth-child(4), td:nth-child(4) { display: none; }
+
+    /* RESPONSIVE MOBILE */
+    @media (max-width: 600px) {
+      .dash-header { padding: .6rem .75rem; }
+      .dash-logo { font-size: 1rem; }
+      .dash-refresh span { display: none; }
+      .dash-refresh { padding: .4rem .6rem; }
+      .dash-logout { padding: .4rem .6rem; font-size: .8rem; }
+      .dash-main { padding: .75rem; }
+
+      .kpi-grid { grid-template-columns: 1fr 1fr; gap: .6rem; margin-bottom: 1.25rem; }
+      .kpi-card { padding: .9rem 1rem; }
+      .kpi-value { font-size: 1.6rem; }
+      .kpi-label { font-size: .72rem; }
+      .kpi-icon { font-size: 1.3rem; margin-top: -1.8rem; }
+
+      .chart-card { padding: 1rem .75rem; }
+      .chart-bars { height: 90px; gap: 3px; }
+      .bar-label { font-size: .55rem; }
+      .bar-count { font-size: .6rem; }
+      .dash-section-title { font-size: .9rem; }
+
+      /* Table → cards sur mobile */
+      .table-search { padding: .75rem; flex-wrap: wrap; gap: .5rem; }
+      .table-search input { width: 100%; }
+      .sub-count { margin-left: 0; }
+
+      table thead { display: none; }
+      table, tbody, tr, td { display: block; width: 100%; }
+      tr {
+        background: var(--surface2);
+        border-radius: 10px;
+        margin-bottom: .6rem;
+        padding: .85rem 1rem;
+        border: 1px solid var(--border);
+        position: relative;
+      }
+      tr:hover td { background: transparent; }
+      td {
+        padding: .15rem 0;
+        border: none;
+        font-size: .88rem;
+        max-width: 100%;
+      }
+      td::before {
+        content: attr(data-label);
+        font-size: .7rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        display: block;
+        margin-bottom: .1rem;
+      }
+      .td-date { font-size: .75rem; color: var(--text-muted); margin-bottom: .4rem; }
+      .td-date::before { display: none; }
+      .td-name { font-size: 1rem; font-weight: 700; margin-bottom: .3rem; }
+      .td-name::before { display: none; }
     }
   </style>
 </head>
