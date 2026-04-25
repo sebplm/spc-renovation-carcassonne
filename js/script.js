@@ -223,7 +223,7 @@ form.addEventListener('submit', async e => {
             fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
                 method: 'POST', body: formData, headers: { 'Accept': 'application/json' }
             }),
-            fetch('/api/save', {
+            fetch('https://site-artisan-carcassonne.vercel.app/api/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
