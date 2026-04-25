@@ -15,6 +15,7 @@ import os
 import re
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
 
@@ -23,6 +24,7 @@ from pathlib import Path
 REPO_ROOT    = Path(__file__).parent.parent
 ARTICLES_DIR = REPO_ROOT / "articles"
 BLOG_HTML    = REPO_ROOT / "blog.html"
+SITEMAP      = REPO_ROOT / "sitemap.xml"
 LOG_DIR      = Path(__file__).parent / "logs"
 
 # ─── LOGGING ────────────────────────────────────────────────────────────────
@@ -155,14 +157,14 @@ def slugify(text: str) -> str:
 
 
 MONTHS_FR = [
-    "Janvier","Février","Mars","Avril","Mai","Juin",
-    "Juillet","Août","Septembre","Octobre","Novembre","Décembre",
+    "janvier","février","mars","avril","mai","juin",
+    "juillet","août","septembre","octobre","novembre","décembre",
 ]
 
 
-def date_fr(date_iso: str) -> str:
-    d = datetime.strptime(date_iso, "%Y-%m-%d")
-    return f"{MONTHS_FR[d.month - 1]} {d.year}"
+def date_display(dt: datetime) -> str:
+    """Retourne '25 avril 2026 à 09h14'"""
+    return f"{dt.day} {MONTHS_FR[dt.month - 1]} {dt.year} à {dt.strftime('%Hh%M')}"
 
 
 # ─── GÉNÉRATION CLAUDE API ───────────────────────────────────────────────────
@@ -238,11 +240,12 @@ RETOURNE UNIQUEMENT un objet JSON valide (sans markdown ni backticks) :
 
 # ─── CONSTRUCTION HTML ───────────────────────────────────────────────────────
 
-def build_html(data: dict, topic: dict, date_iso: str) -> str:
+def build_html(data: dict, topic: dict, date_iso: str, now: datetime) -> str:
     slug       = data.get("slug") or slugify(data["title"])
     canon_slug = f"{date_iso}-{slug}"
     hero_img   = img(topic["category"])
     d          = datetime.strptime(date_iso, "%Y-%m-%d")
+    date_str   = date_display(now)
 
     # Sommaire
     toc = "".join(
@@ -352,7 +355,7 @@ def build_html(data: dict, topic: dict, date_iso: str) -> str:
             <h1>{data['title']}</h1>
             <div class="article-hero-meta">
                 <span><i class="fa-solid fa-user"></i> SPC RENOVATION CARCASSONNE</span>
-                <span><i class="fa-regular fa-calendar"></i> {date_fr(date_iso)}</span>
+                <span><i class="fa-regular fa-calendar"></i> {date_str}</span>
                 <span><i class="fa-regular fa-clock"></i> {data.get('reading_time', 5)} min de lecture</span>
                 <span><i class="fa-solid fa-location-dot"></i> Carcassonne, Aude (11)</span>
             </div>
@@ -468,11 +471,11 @@ def build_html(data: dict, topic: dict, date_iso: str) -> str:
 
 # ─── MISE À JOUR blog.html ────────────────────────────────────────────────────
 
-def update_blog(data: dict, topic: dict, date_iso: str) -> None:
+def update_blog(data: dict, topic: dict, date_iso: str, now: datetime) -> None:
     slug       = data.get("slug") or slugify(data["title"])
     canon_slug = f"{date_iso}-{slug}"
     thumb      = img(topic["category"], w=400)
-    d_fr       = date_fr(date_iso)
+    d_str      = date_display(now)
 
     card = f"""
             <!-- Article auto - {date_iso} -->
@@ -485,7 +488,7 @@ def update_blog(data: dict, topic: dict, date_iso: str) -> None:
                 </a>
                 <div class="blog-card-body">
                     <div class="article-meta-sm">
-                        <span><i class="fa-regular fa-calendar"></i> {d_fr}</span>
+                        <span><i class="fa-regular fa-calendar"></i> {d_str}</span>
                         <span><i class="fa-regular fa-clock"></i> {data.get('reading_time', 5)} min de lecture</span>
                     </div>
                     <h3>{data['title']}</h3>
@@ -503,6 +506,44 @@ def update_blog(data: dict, topic: dict, date_iso: str) -> None:
     log.info("blog.html mis à jour")
 
 
+# ─── MISE À JOUR SITEMAP ─────────────────────────────────────────────────────
+
+NS = "http://www.sitemaps.org/schemas/sitemap/0.9"
+
+
+def update_sitemap(canon_slug: str, date_iso: str) -> None:
+    ET.register_namespace("", NS)
+    tree = ET.parse(SITEMAP)
+    root = tree.getroot()
+
+    new_loc = f"https://spc-renovation-carcassonne.fr/articles/{canon_slug}"
+
+    # Évite les doublons
+    existing = {u.find(f"{{{NS}}}loc").text for u in root.findall(f"{{{NS}}}url")}
+    if new_loc in existing:
+        log.info("Sitemap : URL déjà présente, pas de doublon")
+        return
+
+    # Met à jour le lastmod de /blog
+    for url_el in root.findall(f"{{{NS}}}url"):
+        loc_el = url_el.find(f"{{{NS}}}loc")
+        if loc_el is not None and loc_el.text == "https://spc-renovation-carcassonne.fr/blog":
+            lm = url_el.find(f"{{{NS}}}lastmod")
+            if lm is not None:
+                lm.text = date_iso
+
+    # Ajoute le nouvel article
+    url_el = ET.SubElement(root, f"{{{NS}}}url")
+    ET.SubElement(url_el, f"{{{NS}}}loc").text        = new_loc
+    ET.SubElement(url_el, f"{{{NS}}}lastmod").text    = date_iso
+    ET.SubElement(url_el, f"{{{NS}}}changefreq").text = "monthly"
+    ET.SubElement(url_el, f"{{{NS}}}priority").text   = "0.8"
+
+    ET.indent(tree, space="  ")
+    tree.write(SITEMAP, encoding="unicode", xml_declaration=True)
+    log.info(f"sitemap.xml mis à jour — {new_loc}")
+
+
 # ─── GIT COMMIT + PUSH ───────────────────────────────────────────────────────
 
 def git_push(article_file: str, title: str) -> None:
@@ -510,7 +551,7 @@ def git_push(article_file: str, title: str) -> None:
     cmds = [
         ["git", "config", "user.name",  "SPC Blog Bot"],
         ["git", "config", "user.email", "bot@spc-renovation.fr"],
-        ["git", "add", f"articles/{article_file}", "blog.html"],
+        ["git", "add", f"articles/{article_file}", "blog.html", "sitemap.xml"],
         ["git", "commit", "-m", f"Article auto [{date}] : {title}"],
         ["git", "push"],
     ]
@@ -531,28 +572,30 @@ def main() -> None:
         log.error("Variable ANTHROPIC_API_KEY manquante")
         sys.exit(1)
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    now   = datetime.now()
+    today = now.strftime("%Y-%m-%d")
     topic = get_topic()
     log.info(f"Thème : {topic['label']} ({today})")
 
-    data           = generate(topic)
-    html           = build_html(data, topic, today)
-    slug           = data.get("slug") or slugify(data["title"])
-    filename       = f"{today}-{slug}.html"
-    article_path   = ARTICLES_DIR / filename
+    data         = generate(topic)
+    slug         = data.get("slug") or slugify(data["title"])
+    canon_slug   = f"{today}-{slug}"
+    filename     = f"{canon_slug}.html"
+    article_path = ARTICLES_DIR / filename
 
+    html = build_html(data, topic, today, now)
     article_path.write_text(html, encoding="utf-8")
     log.info(f"Article créé : articles/{filename}")
 
-    update_blog(data, topic, today)
+    update_blog(data, topic, today, now)
+    update_sitemap(canon_slug, today)
 
     if dry_run:
         log.info("[DRY RUN] git push ignoré — article généré localement")
     else:
         git_push(filename, data["title"])
 
-    url = f"https://spc-renovation-carcassonne.fr/articles/{today}-{slug}"
-    log.info(f"✅ Succès — URL : {url}")
+    log.info(f"✅ Succès — URL : https://spc-renovation-carcassonne.fr/articles/{canon_slug}")
 
 
 if __name__ == "__main__":
