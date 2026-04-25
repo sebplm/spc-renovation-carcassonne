@@ -26,9 +26,11 @@ export default async function handler(req, res) {
       days.push(d.toISOString().split('T')[0]);
     }
 
-    const [rawSubmissions, visits, ...uniqueCounts] = await Promise.all([
+    // Données principales
+    const [rawSubmissions, visits, pageViewsRaw, ...uniqueCounts] = await Promise.all([
       redis.lrange('submissions', 0, 499),
       redis.hgetall('visits'),
+      redis.hgetall('page_views'),
       ...days.map(d => redis.scard(`unique:${d}`)),
     ]);
 
@@ -39,10 +41,22 @@ export default async function handler(req, res) {
     const unique_visits = {};
     days.forEach((d, i) => { unique_visits[d] = uniqueCounts[i] || 0; });
 
+    // Visiteurs uniques par URL via HyperLogLog
+    const pageViews = pageViewsRaw || {};
+    const urls = Object.keys(pageViews);
+    const hllCounts = urls.length
+      ? await Promise.all(urls.map(url => redis.pfcount(`page_hll:${url}`)))
+      : [];
+
+    const page_uniques = {};
+    urls.forEach((url, i) => { page_uniques[url] = hllCounts[i] || 0; });
+
     return res.status(200).json({
       submissions,
       visits: visits || {},
       unique_visits,
+      page_views: pageViews,
+      page_uniques,
     });
   } catch (e) {
     return res.status(500).json({ error: e.message });

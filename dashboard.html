@@ -192,6 +192,18 @@
     }
     .empty-state i { font-size: 2.5rem; opacity: .3; display: block; margin-bottom: 1rem; }
     .loading { text-align: center; padding: 3rem; color: var(--text-muted); }
+    .url-label { font-size: .82rem; color: var(--text); font-family: 'Poppins', sans-serif; }
+    .url-path  { font-size: .72rem; color: var(--text-muted); margin-top: .15rem; word-break: break-all; }
+    .td-views  { font-family: 'Poppins', sans-serif; font-weight: 700; color: #93c5fd; }
+    .td-uniq   { font-family: 'Poppins', sans-serif; font-weight: 700; color: #5eead4; }
+    .rank-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 6px; font-size: .72rem;
+      font-weight: 700; background: var(--surface2); color: var(--text-muted); margin-right: .5rem;
+    }
+    .rank-1 { background: rgba(251,191,36,.15); color: #fbbf24; }
+    .rank-2 { background: rgba(148,163,184,.12); color: #94a3b8; }
+    .rank-3 { background: rgba(180,120,60,.12);  color: #b47c3c; }
     .loading i { animation: spin 1s linear infinite; display: inline-block; margin-right: .5rem; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -336,6 +348,28 @@
       </div>
     </div>
 
+    <!-- PAGES VUES -->
+    <div class="dash-section">
+      <div class="dash-section-title"><i class="fa-solid fa-globe"></i> Pages visitées</div>
+      <div class="table-card">
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Page</th>
+                <th style="text-align:right"><span style="color:#93c5fd">Vues</span></th>
+                <th style="text-align:right"><span style="color:#5eead4">Visiteurs uniques</span></th>
+              </tr>
+            </thead>
+            <tbody id="pagesBody">
+              <tr><td colspan="4" class="loading"><i class="fa-solid fa-spinner"></i> Chargement…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- SUBMISSIONS -->
     <div class="dash-section">
       <div class="dash-section-title"><i class="fa-solid fa-inbox"></i> Demandes de devis</div>
@@ -412,6 +446,7 @@ async function loadData() {
     allSubmissions = data.submissions || [];
     renderKPIs(data.visits || {}, data.unique_visits || {}, allSubmissions);
     renderChart(data.visits || {}, data.unique_visits || {});
+    renderPages(data.page_views || {}, data.page_uniques || {});
     renderTable(allSubmissions);
   } catch (e) {
     alert('Erreur de connexion. Vérifiez votre réseau.');
@@ -502,6 +537,41 @@ function renderTable(submissions) {
             <button class="btn-action btn-delete" onclick="deleteSubmission('${s.id}')" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
           </div>
         </td>
+      </tr>`;
+  }).join('');
+}
+
+function renderPages(pageViews, pageUniques) {
+  const tbody = document.getElementById('pagesBody');
+  const entries = Object.entries(pageViews)
+    .map(([url, views]) => ({ url, views: Number(views), uniques: Number(pageUniques[url] || 0) }))
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 30);
+
+  if (!entries.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><i class="fa-solid fa-chart-bar"></i>Aucune donnée de navigation encore.</td></tr>';
+    return;
+  }
+
+  const PAGE_NAMES = {
+    '/': 'Accueil',
+    '/blog': 'Blog — Articles',
+    '/mentions-legales': 'Mentions légales',
+  };
+
+  tbody.innerHTML = entries.map(({ url, views, uniques }, i) => {
+    const rank  = i + 1;
+    const rankClass = rank <= 3 ? ` rank-${rank}` : '';
+    const label = PAGE_NAMES[url] || (url.startsWith('/articles/') ? '📄 ' + url.replace('/articles/', '').replace(/-/g, ' ') : url);
+    return `
+      <tr>
+        <td style="width:36px"><span class="rank-badge${rankClass}">${rank}</span></td>
+        <td>
+          <div class="url-label">${label}</div>
+          <div class="url-path">${url}</div>
+        </td>
+        <td style="text-align:right" class="td-views">${views.toLocaleString('fr-FR')}</td>
+        <td style="text-align:right" class="td-uniq">${uniques.toLocaleString('fr-FR')}</td>
       </tr>`;
   }).join('');
 }

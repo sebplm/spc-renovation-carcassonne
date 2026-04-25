@@ -339,6 +339,6 @@ filterBtns.forEach(btn => {
     });
 });
 </script>
-<script>fetch("https://site-artisan-carcassonne.vercel.app/api/track",{method:"POST"}).catch(()=>{})</script>
+<script>fetch("https://site-artisan-carcassonne.vercel.app/api/track",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:location.pathname})}).catch(()=>{})</script>
 </body>
 </html>

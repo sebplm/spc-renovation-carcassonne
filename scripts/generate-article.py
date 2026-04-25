@@ -464,7 +464,7 @@ def build_html(data: dict, topic: dict, date_iso: str, now: datetime) -> str:
 <button id="backToTop" class="back-to-top" aria-label="Retour en haut"><i class="fa-solid fa-chevron-up"></i></button>
 <a href="tel:0632497240" class="mobile-phone-btn"><i class="fa-solid fa-phone"></i><span>Appeler maintenant</span></a>
 <script src="../js/script.js"></script>
-<script>fetch("https://site-artisan-carcassonne.vercel.app/api/track",{{method:"POST"}}).catch(()=>{{}});</script>
+<script>fetch("https://site-artisan-carcassonne.vercel.app/api/track",{{method:"POST",headers:{{"Content-Type":"application/json"}},body:JSON.stringify({{url:location.pathname}})}}).catch(()=>{{}});</script>
 </body>
 </html>"""
 
