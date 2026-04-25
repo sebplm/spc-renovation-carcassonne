@@ -209,13 +209,21 @@ form.addEventListener('submit', async e => {
     }
 
     try {
-        const data = new FormData(form);
-        const res  = await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
-            method: 'POST',
-            body: data,
-            headers: { 'Accept': 'application/json' }
-        });
-        if (res.ok) {
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+
+        const [formspreeRes] = await Promise.all([
+            fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+                method: 'POST', body: formData, headers: { 'Accept': 'application/json' }
+            }),
+            fetch('/api/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(() => {})
+        ]);
+
+        if (formspreeRes.ok) {
             showSuccess();
         } else {
             throw new Error('Erreur serveur');
@@ -223,7 +231,7 @@ form.addEventListener('submit', async e => {
     } catch {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
-        alert('Une erreur est survenue. Veuillez nous appeler directement au 06 32 49 72 40.');
+        alert('Une erreur est survenue. Veuillez nous appeler directement au 06 42 60 76 31.');
     }
 
     function showSuccess() {
