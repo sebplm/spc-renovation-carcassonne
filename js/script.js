@@ -210,7 +210,14 @@ form.addEventListener('submit', async e => {
 
     try {
         const formData = new FormData(form);
-        const payload = Object.fromEntries(formData.entries());
+        const payload = {
+            nom:       form.querySelector('[name="nom"]')?.value       || '',
+            prenom:    form.querySelector('[name="prenom"]')?.value    || '',
+            telephone: form.querySelector('[name="telephone"]')?.value || '',
+            email:     form.querySelector('[name="email"]')?.value     || '',
+            service:   form.querySelector('[name="travaux"]')?.value   || '',
+            message:   form.querySelector('[name="message"]')?.value   || '',
+        };
 
         const [formspreeRes] = await Promise.all([
             fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {

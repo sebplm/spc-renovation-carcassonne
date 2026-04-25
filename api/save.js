@@ -21,7 +21,7 @@ export default async function handler(req, res) {
       prenom: body.prenom || '',
       telephone: body.telephone || '',
       email: body.email || '',
-      service: body.service || '',
+      service: body.service || body.travaux || '',
       message: body.message || '',
     };
     await redis.lpush('submissions', JSON.stringify(entry));
