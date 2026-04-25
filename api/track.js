@@ -13,7 +13,20 @@ export default async function handler(req, res) {
 
   try {
     const today = new Date().toISOString().split('T')[0];
-    await redis.hincrby('visits', today, 1);
+
+    // IP visiteur (pour dédoublonnage)
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+               || req.socket?.remoteAddress
+               || 'unknown';
+
+    const uniqueKey = `unique:${today}`;
+
+    await Promise.all([
+      redis.hincrby('visits', today, 1),          // total pages vues
+      redis.sadd(uniqueKey, ip),                   // visiteurs uniques (SET Redis)
+      redis.expire(uniqueKey, 60 * 60 * 24 * 30), // expiration 30 jours
+    ]);
+
     return res.status(200).json({ ok: true });
   } catch (e) {
     return res.status(500).json({ error: e.message });

@@ -18,16 +18,32 @@ export default async function handler(req, res) {
   }
 
   try {
-    const [rawSubmissions, visits] = await Promise.all([
+    // 14 derniers jours
+    const days = [];
+    for (let i = 0; i < 14; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(d.toISOString().split('T')[0]);
+    }
+
+    const [rawSubmissions, visits, ...uniqueCounts] = await Promise.all([
       redis.lrange('submissions', 0, 499),
       redis.hgetall('visits'),
+      ...days.map(d => redis.scard(`unique:${d}`)),
     ]);
 
     const submissions = (rawSubmissions || []).map(s =>
       typeof s === 'string' ? JSON.parse(s) : s
     );
 
-    return res.status(200).json({ submissions, visits: visits || {} });
+    const unique_visits = {};
+    days.forEach((d, i) => { unique_visits[d] = uniqueCounts[i] || 0; });
+
+    return res.status(200).json({
+      submissions,
+      visits: visits || {},
+      unique_visits,
+    });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }

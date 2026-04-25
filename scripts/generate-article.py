@@ -184,7 +184,7 @@ ENTREPRISE :
 - SPC RENOVATION — artisan multi-services à Carcassonne
 - Services : plomberie, carrelage, électricité, plâtrerie, peinture, dépannage urgent
 - Zone : Carcassonne et Aude (11) — Trèbes, Pennautier, Castelnaudary, Limoux, Alzonne
-- Téléphone : 06 42 60 76 31 — 15 ans d'expérience — artisan local
+- Téléphone : 06 32 49 72 40 — 15 ans d'expérience — artisan local
 - Année : {year}
 
 CONSIGNES :
@@ -214,7 +214,7 @@ RETOURNE UNIQUEMENT un objet JSON valide (sans markdown ni backticks) :
   ],
   "conclusion": "<p>Synthèse des points clés.</p><p>Invitation à contacter SPC RENOVATION.</p>",
   "cta_title": "Titre CTA adapté au sujet de l'article",
-  "cta_body": "Phrase d'accroche avec bénéfice + mention du 06 42 60 76 31",
+  "cta_body": "Phrase d'accroche avec bénéfice + mention du 06 32 49 72 40",
   "tags": ["Tag 1 Carcassonne", "Tag 2", "Tag 3", "Tag 4"],
   "card_excerpt": "Extrait accrocheur 150-200 caractères pour la carte du blog"
 }}"""
@@ -331,7 +331,7 @@ def build_html(data: dict, topic: dict, date_iso: str, now: datetime) -> str:
             <li><a href="/#realisations" class="nav-link">Réalisations</a></li>
             <li><a href="/blog" class="nav-link nav-link--blog"><i class="fa-solid fa-pen-to-square"></i> Blog</a></li>
             <li><a href="/#contact" class="nav-link">Contact</a></li>
-            <li><a href="tel:0642607631" class="nav-phone"><i class="fa-solid fa-phone"></i> 06 42 60 76 31</a></li>
+            <li><a href="tel:0632497240" class="nav-phone"><i class="fa-solid fa-phone"></i> 06 32 49 72 40</a></li>
         </ul>
         <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false">
             <span></span><span></span><span></span>
@@ -389,7 +389,7 @@ def build_html(data: dict, topic: dict, date_iso: str, now: datetime) -> str:
             <h3>{data.get('cta_title', "Besoin d'un artisan à Carcassonne ?")}</h3>
             <p>{data.get('cta_body', "SPC RENOVATION intervient pour tous vos travaux dans l'Aude. Devis gratuit sous 24h.")}</p>
             <div class="article-cta-btns">
-                <a href="tel:0642607631" class="btn btn-secondary btn-lg"><i class="fa-solid fa-phone"></i> 06 42 60 76 31</a>
+                <a href="tel:0632497240" class="btn btn-secondary btn-lg"><i class="fa-solid fa-phone"></i> 06 32 49 72 40</a>
                 <a href="/#contact" class="btn btn-primary btn-lg"><i class="fa-solid fa-clipboard-check"></i> Devis gratuit</a>
             </div>
         </div>
@@ -447,7 +447,7 @@ def build_html(data: dict, topic: dict, date_iso: str, now: datetime) -> str:
                     <li><span>Dimanche</span><span class="closed">Urgences uniquement</span></li>
                 </ul></div>
                 <div class="footer-col"><h4>Contact</h4><ul class="footer-contact-list">
-                    <li><i class="fa-solid fa-phone"></i><a href="tel:0642607631">06 42 60 76 31</a></li>
+                    <li><i class="fa-solid fa-phone"></i><a href="tel:0632497240">06 32 49 72 40</a></li>
                     <li><i class="fa-solid fa-location-dot"></i><span>11000 Carcassonne — Aude</span></li>
                 </ul><a href="/#contact" class="btn btn-secondary btn-sm footer-devis-btn"><i class="fa-solid fa-clipboard-check"></i> Devis gratuit</a></div>
             </div>
@@ -462,7 +462,7 @@ def build_html(data: dict, topic: dict, date_iso: str, now: datetime) -> str:
 </footer>
 
 <button id="backToTop" class="back-to-top" aria-label="Retour en haut"><i class="fa-solid fa-chevron-up"></i></button>
-<a href="tel:0642607631" class="mobile-phone-btn"><i class="fa-solid fa-phone"></i><span>Appeler maintenant</span></a>
+<a href="tel:0632497240" class="mobile-phone-btn"><i class="fa-solid fa-phone"></i><span>Appeler maintenant</span></a>
 <script src="../js/script.js"></script>
 <script>fetch("https://site-artisan-carcassonne.vercel.app/api/track",{{method:"POST"}}).catch(()=>{{}});</script>
 </body>

@@ -94,7 +94,8 @@
     .kpi-value { font-family: 'Poppins', sans-serif; font-size: 2rem; font-weight: 700; line-height: 1; }
     .kpi-value.blue { color: var(--primary); }
     .kpi-value.orange { color: var(--secondary); }
-    .kpi-value.green { color: #4ade80; }
+    .kpi-value.green  { color: #4ade80; }
+    .kpi-value.teal   { color: #2dd4bf; }
     .kpi-sub { font-size: .8rem; color: var(--text-muted); margin-top: .35rem; }
     .kpi-icon { float: right; opacity: .25; font-size: 1.75rem; margin-top: -2.25rem; }
 
@@ -116,13 +117,19 @@
       margin-top: 1rem;
     }
     .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    .bar {
-      width: 100%; background: var(--primary); border-radius: 4px 4px 0 0;
-      transition: height .4s ease; min-height: 2px;
-    }
-    .bar:hover { background: #60a5fa; }
+    .bars-row { display: flex; gap: 2px; align-items: flex-end; width: 100%; }
+    .bar { flex: 1; border-radius: 3px 3px 0 0; transition: height .4s ease; min-height: 2px; }
+    .bar-views   { background: var(--primary); }
+    .bar-views:hover   { opacity: .75; }
+    .bar-uniques { background: #2dd4bf; }
+    .bar-uniques:hover { opacity: .75; }
     .bar-label { font-size: .65rem; color: var(--text-muted); text-align: center; white-space: nowrap; }
-    .bar-count { font-size: .7rem; color: var(--text-muted); }
+    .bar-counts { display: flex; gap: 3px; justify-content: center; font-size: .62rem; }
+    .bar-count-v { color: #93c5fd; }
+    .bar-count-u { color: #5eead4; }
+    .chart-legend { display: flex; gap: 1.2rem; justify-content: flex-end; margin-bottom: .5rem; font-size: .75rem; color: var(--text-muted); }
+    .chart-legend span { display: flex; align-items: center; gap: .35rem; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
     /* SUBMISSIONS TABLE */
     .table-card {
@@ -278,9 +285,9 @@
         <div class="kpi-sub">pages vues</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Visites ce mois</div>
-        <div class="kpi-value blue" id="kpiMonth">—</div>
-        <i class="fa-solid fa-calendar kpi-icon"></i>
+        <div class="kpi-label">Visiteurs uniques aujourd'hui</div>
+        <div class="kpi-value teal" id="kpiUnique">—</div>
+        <i class="fa-solid fa-users kpi-icon"></i>
         <div class="kpi-sub" id="kpiMonthLabel">—</div>
       </div>
       <div class="kpi-card">
@@ -301,6 +308,10 @@
     <div class="dash-section">
       <div class="dash-section-title"><i class="fa-solid fa-chart-bar"></i> Visites — 14 derniers jours</div>
       <div class="chart-card">
+        <div class="chart-legend">
+          <span><span class="legend-dot" style="background:var(--primary)"></span> Pages vues</span>
+          <span><span class="legend-dot" style="background:#2dd4bf"></span> Visiteurs uniques</span>
+        </div>
         <div class="chart-bars" id="chartBars">
           <div class="loading"><i class="fa-solid fa-spinner"></i> Chargement…</div>
         </div>
@@ -380,8 +391,8 @@ async function loadData() {
     document.getElementById('dashboard').style.display = 'block';
 
     allSubmissions = data.submissions || [];
-    renderKPIs(data.visits || {}, allSubmissions);
-    renderChart(data.visits || {});
+    renderKPIs(data.visits || {}, data.unique_visits || {}, allSubmissions);
+    renderChart(data.visits || {}, data.unique_visits || {});
     renderTable(allSubmissions);
   } catch (e) {
     alert('Erreur de connexion. Vérifiez votre réseau.');
@@ -389,42 +400,51 @@ async function loadData() {
   icon.classList.remove('fa-spin');
 }
 
-function renderKPIs(visits, submissions) {
+function renderKPIs(visits, unique_visits, submissions) {
   const today = new Date().toISOString().split('T')[0];
   const currentMonth = today.slice(0, 7);
 
-  const todayVisits = visits[today] || 0;
-  const monthVisits = Object.entries(visits)
+  const todayVisits  = visits[today] || 0;
+  const todayUnique  = (unique_visits || {})[today] || 0;
+  const monthVisits  = Object.entries(visits)
     .filter(([d]) => d.startsWith(currentMonth))
     .reduce((s, [, v]) => s + Number(v), 0);
 
   const monthSubs = submissions.filter(s => s.date && s.date.startsWith(currentMonth)).length;
 
-  document.getElementById('kpiToday').textContent = todayVisits;
-  document.getElementById('kpiMonth').textContent = monthVisits;
-  document.getElementById('kpiMonthLabel').textContent = new Date().toLocaleString('fr-FR', { month: 'long', year: 'numeric' });
+  document.getElementById('kpiToday').textContent       = todayVisits;
+  document.getElementById('kpiUnique').textContent      = todayUnique;
+  document.getElementById('kpiMonthLabel').textContent  = new Date().toLocaleString('fr-FR', { month: 'long', year: 'numeric' });
   document.getElementById('kpiSubmissions').textContent = submissions.length;
-  document.getElementById('kpiMonthSubs').textContent = monthSubs;
+  document.getElementById('kpiMonthSubs').textContent   = monthSubs;
 }
 
-function renderChart(visits) {
+function renderChart(visits, unique_visits) {
   const days = [];
   for (let i = 13; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     days.push(d.toISOString().split('T')[0]);
   }
-  const vals = days.map(d => Number(visits[d] || 0));
-  const max = Math.max(...vals, 1);
+  const vVals = days.map(d => Number(visits[d] || 0));
+  const uVals = days.map(d => Number((unique_visits || {})[d] || 0));
+  const max   = Math.max(...vVals, ...uVals, 1);
 
   const container = document.getElementById('chartBars');
   container.innerHTML = days.map((d, i) => {
-    const pct = Math.round((vals[i] / max) * 100);
+    const vPct = Math.round((vVals[i] / max) * 100);
+    const uPct = Math.round((uVals[i] / max) * 100);
     const label = new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
     return `
       <div class="bar-wrap">
-        <div class="bar-count">${vals[i] || ''}</div>
-        <div class="bar" style="height:${Math.max(pct, 2)}%" title="${vals[i]} visite(s) le ${label}"></div>
+        <div class="bar-counts">
+          <span class="bar-count-v">${vVals[i] || ''}</span>
+          <span class="bar-count-u">${uVals[i] || ''}</span>
+        </div>
+        <div class="bars-row">
+          <div class="bar bar-views"   style="height:${Math.max(vPct,2)}%" title="${vVals[i]} vue(s) le ${label}"></div>
+          <div class="bar bar-uniques" style="height:${Math.max(uPct,2)}%" title="${uVals[i]} visiteur(s) unique(s) le ${label}"></div>
+        </div>
         <div class="bar-label">${label}</div>
       </div>`;
   }).join('');
@@ -465,4 +485,3 @@ function filterTable() {
 }
 </script>
 </body>
-</html>

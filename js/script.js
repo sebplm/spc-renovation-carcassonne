@@ -239,7 +239,7 @@ form.addEventListener('submit', async e => {
     } catch {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
-        alert('Une erreur est survenue. Veuillez nous appeler directement au 06 42 60 76 31.');
+        alert('Une erreur est survenue. Veuillez nous appeler directement au 06 32 49 72 40.');
     }
 
     function showSuccess() {
