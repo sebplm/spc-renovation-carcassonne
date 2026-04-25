@@ -1215,7 +1215,7 @@ em { font-style: normal; color: var(--primary); }
     .zone-layout   { grid-template-columns: 1fr; gap: 2rem; }
     .contact-layout{ grid-template-columns: 1fr; gap: 2.5rem; }
     .team-layout   { grid-template-columns: 1fr; gap: 3rem; }
-    .team-photo-frame { aspect-ratio: 4/5; max-width: 360px; margin: 0 auto; }
+    .team-photo-frame { aspect-ratio: 4/5; max-width: 100%; margin: 0 auto; }
     .team-photo-badge { bottom: -1rem; }
     .team-content { padding-top: 1rem; }
 }
