@@ -22,7 +22,8 @@
       --radius: 12px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Open Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    html { overflow-x: hidden; }
+    body { font-family: 'Open Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
 
     /* LOGIN */
     #login-screen {
@@ -80,7 +81,7 @@
     .dash-logout:hover { background: rgba(239,68,68,.1); color: #f87171; }
 
     /* MAIN */
-    .dash-main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+    .dash-main { padding: 2rem; max-width: 1400px; margin: 0 auto; width: 100%; }
 
     /* KPI CARDS */
     .kpi-grid {
@@ -110,11 +111,12 @@
     /* CHART */
     .chart-card {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 1.5rem;
+      border-radius: var(--radius); padding: 1.5rem; overflow: hidden;
     }
+    .chart-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .chart-bars {
       display: flex; align-items: flex-end; gap: 6px; height: 120px;
-      margin-top: 1rem;
+      margin-top: 1rem; min-width: 320px;
     }
     .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .bars-row { display: flex; gap: 2px; align-items: flex-end; width: 100%; }
@@ -342,8 +344,10 @@
           <span><span class="legend-dot" style="background:var(--primary)"></span> Pages vues</span>
           <span><span class="legend-dot" style="background:#2dd4bf"></span> Visiteurs uniques</span>
         </div>
-        <div class="chart-bars" id="chartBars">
-          <div class="loading"><i class="fa-solid fa-spinner"></i> Chargement…</div>
+        <div class="chart-scroll">
+          <div class="chart-bars" id="chartBars">
+            <div class="loading"><i class="fa-solid fa-spinner"></i> Chargement…</div>
+          </div>
         </div>
       </div>
     </div>
@@ -406,6 +410,7 @@
 const API = '/api/data';
 let allSubmissions = [];
 let dashKey = '';
+let treatedSet = new Set();
 
 function doLogin() {
   const key = document.getElementById('loginKey').value.trim();
@@ -444,6 +449,7 @@ async function loadData() {
     document.getElementById('dashboard').style.display = 'block';
 
     allSubmissions = data.submissions || [];
+    treatedSet = new Set((data.treated || []).map(String));
     renderKPIs(data.visits || {}, data.unique_visits || {}, allSubmissions);
     renderChart(data.visits || {}, data.unique_visits || {});
     renderPages(data.page_views || {}, data.page_uniques || {});
@@ -513,14 +519,13 @@ function renderTable(submissions) {
     return;
   }
 
-  const treated = getTreated();
   tbody.innerHTML = submissions.map(s => {
     const date      = s.date ? new Date(s.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
     const name      = [s.prenom, s.nom].filter(Boolean).join(' ') || '—';
     const phone     = s.telephone ? `<a href="tel:${s.telephone.replace(/\s/g, '')}">${s.telephone}</a>` : '—';
     const service   = s.service ? `<span class="service-badge">${s.service}</span>` : '—';
     const msg       = s.message ? s.message.slice(0, 120) + (s.message.length > 120 ? '…' : '') : '—';
-    const isTreated = treated.has(String(s.id));
+    const isTreated = treatedSet.has(String(s.id));
     const btnTraite = isTreated
       ? `<button class="btn-action btn-traite done" disabled><i class="fa-solid fa-check"></i> Traité</button>`
       : `<button class="btn-action btn-traite" onclick="markTreated('${s.id}')"><i class="fa-regular fa-circle-check"></i> Traité</button>`;
@@ -584,25 +589,23 @@ function filterTable() {
   renderTable(filtered);
 }
 
-// ── Traité (persisté en localStorage) ──
-const TREATED_KEY = 'spc_treated';
-function getTreated() {
-  try { return new Set(JSON.parse(localStorage.getItem(TREATED_KEY) || '[]')); }
-  catch { return new Set(); }
-}
-function saveTreated(set) {
-  localStorage.setItem(TREATED_KEY, JSON.stringify([...set]));
-}
-function markTreated(id) {
-  const treated = getTreated();
-  treated.add(String(id));
-  saveTreated(treated);
-  const row = document.querySelector(`tr[data-id="${id}"]`);
-  if (row) {
-    row.classList.add('treated');
-    const btn = row.querySelector('.btn-traite');
-    if (btn) { btn.innerHTML = '<i class="fa-solid fa-check"></i> Traité'; btn.classList.add('done'); btn.disabled = true; }
-  }
+// ── Traité (persisté dans Redis) ──
+async function markTreated(id) {
+  try {
+    const res = await fetch('/api/treated', {
+      method: 'POST',
+      headers: { 'x-dashboard-key': dashKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) { alert('Erreur lors de la mise à jour.'); return; }
+    treatedSet.add(String(id));
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    if (row) {
+      row.classList.add('treated');
+      const btn = row.querySelector('.btn-traite');
+      if (btn) { btn.innerHTML = '<i class="fa-solid fa-check"></i> Traité'; btn.classList.add('done'); btn.disabled = true; }
+    }
+  } catch { alert('Erreur réseau.'); }
 }
 
 // ── Supprimer (appel API) ──
@@ -616,9 +619,7 @@ async function deleteSubmission(id) {
     });
     if (res.ok) {
       allSubmissions = allSubmissions.filter(s => String(s.id) !== String(id));
-      const treated = getTreated();
-      treated.delete(String(id));
-      saveTreated(treated);
+      treatedSet.delete(String(id));
       renderTable(allSubmissions);
     } else {
       alert('Erreur lors de la suppression.');

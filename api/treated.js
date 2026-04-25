@@ -20,27 +20,7 @@ export default async function handler(req, res) {
   try {
     const { id } = req.body;
     if (!id) return res.status(400).json({ error: 'Missing id' });
-
-    // Récupère tous les éléments bruts de la liste
-    const raw = await redis.lrange('submissions', 0, -1);
-
-    // Trouve la chaîne exacte correspondant à cet ID
-    const targetRaw = (raw || []).find(s => {
-      try {
-        const parsed = typeof s === 'string' ? JSON.parse(s) : s;
-        return String(parsed.id) === String(id);
-      } catch { return false; }
-    });
-
-    if (!targetRaw) return res.status(404).json({ error: 'Not found' });
-
-    // Supprime l'entrée exacte de la liste Redis
-    const rawStr = typeof targetRaw === 'string' ? targetRaw : JSON.stringify(targetRaw);
-    await Promise.all([
-      redis.lrem('submissions', 1, rawStr),
-      redis.srem('treated_submissions', String(id)),
-    ]);
-
+    await redis.sadd('treated_submissions', String(id));
     return res.status(200).json({ ok: true });
   } catch (e) {
     return res.status(500).json({ error: e.message });

@@ -27,10 +27,11 @@ export default async function handler(req, res) {
     }
 
     // Données principales
-    const [rawSubmissions, visits, pageViewsRaw, ...uniqueCounts] = await Promise.all([
+    const [rawSubmissions, visits, pageViewsRaw, treatedRaw, ...uniqueCounts] = await Promise.all([
       redis.lrange('submissions', 0, 499),
       redis.hgetall('visits'),
       redis.hgetall('page_views'),
+      redis.smembers('treated_submissions'),
       ...days.map(d => redis.scard(`unique:${d}`)),
     ]);
 
@@ -57,6 +58,7 @@ export default async function handler(req, res) {
       unique_visits,
       page_views: pageViews,
       page_uniques,
+      treated: treatedRaw || [],
     });
   } catch (e) {
     return res.status(500).json({ error: e.message });
