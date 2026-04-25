@@ -629,5 +629,17 @@ async function deleteSubmission(id) {
     }
   } catch { alert('Erreur réseau.'); }
 }
+
+// DEBUG OVERFLOW — temporaire
+function findOverflow() {
+  const w = document.documentElement.offsetWidth;
+  document.querySelectorAll('*').forEach(el => {
+    const r = el.getBoundingClientRect();
+    if (r.right > w + 2) {
+      el.style.outline = '3px solid red';
+    }
+  });
+}
+setTimeout(findOverflow, 800);
 </script>
 </body>
