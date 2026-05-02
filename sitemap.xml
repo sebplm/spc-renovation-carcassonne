@@ -8,7 +8,7 @@
   </url>
   <url>
     <loc>https://spc-renovation-carcassonne.fr/blog</loc>
-    <lastmod>2026-05-01</lastmod>
+    <lastmod>2026-05-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
@@ -129,6 +129,12 @@
   <url>
     <loc>https://spc-renovation-carcassonne.fr/articles/2026-05-01-carrelage-exterieur-carcassonne-aude-guide-2026</loc>
     <lastmod>2026-05-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://spc-renovation-carcassonne.fr/articles/2026-05-02-tableau-electrique-mise-aux-normes-nf-c-15-100-carcassonne-aude</loc>
+    <lastmod>2026-05-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
